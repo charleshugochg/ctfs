@@ -1,6 +1,6 @@
 # Write Up
 
-## Challenge: **pbjar/2021/pwn/curve**
+### Challenge: pbjar/2021/pwn/curve
 
 ### Initial Research
 ---
@@ -9,7 +9,9 @@
 
 ```console
 ❯ file curve
-curve: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, interpreter ./ld-2.31.so, for GNU/Linux 3.2.0, BuildID[sha1]=e8fe3eece1912689d5e47acaf76c1dca070f4ad8, not strippe
+curve: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, \
+  interpreter ./ld-2.31.so, for GNU/Linux 3.2.0, BuildID[sha1]=e8fe3eece1912689d5e47acaf76c1dca070f4ad8, \
+  not stripped
 ```
 
 ```console
@@ -43,7 +45,7 @@ undefined8 main(void)
 
 ! but canary says sorry
 
-! okay, let's see what puts can leak from the stack
+! okay, let's see what **puts** can leak from the stack
 
 ```console
 (gdb) x/22gx $rbp-0x90
@@ -62,8 +64,8 @@ undefined8 main(void)
 
 ! we can leak only one of these -
 + a stack address
-+ an address where curve loaded
-+ an address where libc loaded if we go through canary
++ an address from where curve loaded
++ an address from where libc loaded if we go through canary
 
 ? what else, and only else
 
@@ -125,7 +127,7 @@ undefined8 main(void)
 
 ! oh, i can only modify a part of it
 
-! that would allow to jump some special location with proper alignment
+! that would allow to jump some special locations with proper alignment
 
 ! let's see what is interesting there
 
@@ -148,7 +150,7 @@ undefined8 main(void)
 
 ! now we can leak everything from the memory with printf, as the program will not end
 
-! the payload would be like "111%{}$hhn %{}$lx ..."
+! the payload would be like `"111%{}$hhn %{}$lx ..."`
 
 ! the first format is to modify the return address with 03 and others to leak
 
@@ -165,9 +167,9 @@ undefined8 main(void)
 
 ! stuck
 
-! oh wait, pop rdi; ret; will call the system cause we have full control of stack
+! oh wait, `pop rdi; ret;` will call the system cause we have full control of stack
 
-! if we found those instructions on any loaded program by any chance, we can redirect to there with a crafted stack
+! if we found that pattern on any loaded program by any chance, we can redirect to there with a crafted stack
 
 ! let's see the shell code of those instructions real quick
 
@@ -181,7 +183,7 @@ undefined8 main(void)
    1:   c3                      retq
 ```
 
-! search for 0x5f 0xc3 in ghidra
+! search for the pattern `0x5f 0xc3` in ghidra
 
 ```console
         undefined __libc_csu_init()
@@ -190,17 +192,17 @@ undefined8 main(void)
         0010133c c3              RET
 ```
 
-! it's in the csu init
+! it's in the `__libc_csu_init`
 
 ! we can jump to 0x..3b instead of 0x..3a
 
 ! that will pop the rdi and return
 
-! before return to there, stack format should be
+! before redirect to there, stack format should be like -
 
 ```
 * rsp
-| address_to_0x5f0xc3 | bin_sh_address | system_address |
+| address_to_pattern | bin_sh_address | system_address |
 ```
 
 ```diff
