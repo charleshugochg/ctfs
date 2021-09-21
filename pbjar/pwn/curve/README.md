@@ -39,11 +39,11 @@ undefined8 main(void)
 }
 ```
 
-`! obviously, read is overflowing the stack by 0xb0-136=40 bytes`
+>! obviously, read is overflowing the stack by 0xb0-136=40 bytes
 
-`! but canary says sorry`
+>! but canary says sorry
 
-`! okay, let's see what puts can leak from the stack`
+>! okay, let's see what puts can leak from the stack
 
 ```console
 (gdb) x/22gx $rbp-0x90
