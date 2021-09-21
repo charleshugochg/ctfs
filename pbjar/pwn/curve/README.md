@@ -167,7 +167,7 @@ undefined8 main(void)
 
 ! stuck
 
-! oh wait, `pop rdi; ret;` will call the system cause we have full control of stack
+! oh wait, `pop rdi; ret;` will do cause we have fully control of stack
 
 ! if we found that pattern on any loaded program by any chance, we can redirect to there with a crafted stack
 
@@ -208,7 +208,7 @@ undefined8 main(void)
 ```diff
 + __libc_csu_init address can be calculated from leaked address
 + /bin/sh can be written to heap
-+ heap address is also leaked
++ an address from the heap is also leaked
 ```
 
 ! perfect
