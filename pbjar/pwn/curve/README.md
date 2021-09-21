@@ -5,7 +5,7 @@
 ### Initial Research
 ---
 
-`! first thing first`
+! first thing first
 
 ```console
 ❯ file curve
@@ -22,9 +22,9 @@ curve: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linke
     PIE:      PIE enabled
 ```
 
-`! everything is on`
+! everything is on
 
-`! ghidra time`
+! ghidra time
 
 ```c
 undefined8 main(void)
@@ -39,11 +39,11 @@ undefined8 main(void)
 }
 ```
 
->! obviously, read is overflowing the stack by 0xb0-136=40 bytes
+! obviously, read is overflowing the stack by `0xb0-136=40` bytes
 
->! but canary says sorry
+! but canary says sorry
 
->! okay, let's see what puts can leak from the stack
+! okay, let's see what puts can leak from the stack
 
 ```console
 (gdb) x/22gx $rbp-0x90
@@ -86,20 +86,23 @@ undefined8 main(void)
 }
 ```
 
->? printf
->! this will allow us to leak the data from the stack
->! and to write the random locations where the data from the stack is pointed to
->! or if we combine with input 2, we can write an arbitrary location, as it's writing into the stack
+? printf
+
+! this will allow us to leak the data from the stack
+
+! and to write the **random** locations where the data from the stack is pointed to
+
+! or if we combine with input 2, we can write an **arbitrary** location, as it's writing into the stack
 
 ### Thought flow
 ---
-`! leak the stack address using input 1`
+! leak the stack address using input 1
 
-`! write the shell code and the main return address pointer into the stack using input 2`
+! write the shell code and the main return address pointer into the stack using input 2
 
-`! modify the main return address on the stack with the shell code address using printf`
+! modify the main return address on the stack with the shell code address using printf
 
-`! execution will be redirected`
+! execution will be redirected
 
 ```diff
 + stack address can be leaked
@@ -108,23 +111,23 @@ undefined8 main(void)
 + still can modify the main return address with a painful printf bandwidth, as we can only write one pointer on the stack
 - unfortunately stack is not executable: FULL RELRO
 ```
-`! we can still redirect the execution where ever we want`
+! we can still redirect the execution where ever we want
 
-`? any system call in the program`
+? any system call in the program
 
-`! not found`
+! not found
 
-`! wait we can't know any other address to jump if we need stack address for redirection`
+! wait we can't know any other address to jump if we need stack address for redirection
 
-`! stuck`
+! stuck
 
-`! wait original return address might be useful`
+! wait original return address might be useful
 
-`! oh, i can only modify a part of it`
+! oh, i can only modify a part of it
 
-`! that would allow to jump some special location with proper alignment`
+! that would allow to jump some special location with proper alignment
 
-`! let's see what is interesting there`
+! let's see what is interesting there
 
 ```console
 (gdb) disas 0x00007ffff7e2cd0a
@@ -137,19 +140,19 @@ undefined8 main(void)
 (gdb) x/i $rsp+0x10
    0x555555555195 <main>:       push   rbp
 ```
-`! interesting`
+! interesting
 
-`! if we change the least significant byte of the return address from 0x..0a to 0x..03, the main will be called again`
+! if we change the least significant byte of the return address from 0x..0a to 0x..03, the main will be called again
 
-`! perfect`
+! perfect
 
-`! now we can leak everything from the memory with printf, as the program will not end`
+! now we can leak everything from the memory with printf, as the program will not end
 
-`! the payload would be like "111%{}$hhn %{}$lx ..."`
+! the payload would be like "111%{}$hhn %{}$lx ..."
 
-`! the first format is to modify the return address and else to leak`
+! the first format is to modify the return address with 03 and others to leak
 
-`? now what`
+? now what
 ```diff
 + able to write to any amount of memory locations as we can loop back to mean
 + a libc address can be leaked
@@ -158,15 +161,15 @@ undefined8 main(void)
 - rdi needs to be loaded with string pointer pointed to "/{program_path}"
 ```
 
-`? how to call system properly without shell code`
+? how to call system properly without shell code
 
-`! stuck`
+! stuck
 
-`! oh wait, pop rdi; ret; will call the system cause we have full control of stack`
+! oh wait, pop rdi; ret; will call the system cause we have full control of stack
 
-`! if we found those instructions on any loaded program by any chance, we can redirect to there with a crafted stack`
+! if we found those instructions on any loaded program by any chance, we can redirect to there with a crafted stack
 
-`! let's see the shell code of those instructions real quick`
+! let's see the shell code of those instructions real quick
 
 ```console
 ❯ echo -e "pop rdi\nret" > pop-rdi-ret.asm
@@ -178,7 +181,7 @@ undefined8 main(void)
    1:   c3                      retq
 ```
 
-`! search for 0x5f 0xc3 in ghidra`
+! search for 0x5f 0xc3 in ghidra
 
 ```console
         undefined __libc_csu_init()
@@ -187,13 +190,13 @@ undefined8 main(void)
         0010133c c3              RET
 ```
 
-`! it's in the csu init`
+! it's in the csu init
 
-`! we can jump to 0x..3b instead of 0x..3a`
+! we can jump to 0x..3b instead of 0x..3a
 
-`! that will pop the rdi and return`
+! that will pop the rdi and return
 
-`! before return to there, stack format should be`
+! before return to there, stack format should be
 
 ```
 * rsp
@@ -206,6 +209,6 @@ undefined8 main(void)
 + heap address is also leaked
 ```
 
-`! perfect`
+! perfect
 
-`! review` [exploit.py](exploit.py) `for implementation`
+! review [exploit.py](exploit.py) for implementation
