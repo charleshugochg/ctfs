@@ -60,12 +60,12 @@ undefined8 main(void)
 0x7fffffffd930: 0x00007fffffffda18      0x0000000100000000
 ```
 
-`! we can leak only one of these -`
-+ `a stack address`
-+ `an address where curve loaded`
-+ `an address where libc loaded if we go through canary`
+! we can leak only one of these -
++ a stack address
++ an address where curve loaded
++ an address where libc loaded if we go through canary
 
-`? what else, and only else`
+? what else, and only else
 
 ```c
 undefined8 main(void)
@@ -86,13 +86,10 @@ undefined8 main(void)
 }
 ```
 
-`? printf`
-
-`! this will allow us to leak the data from the stack`
-
-`! and to write the random locations where the data from the stack is pointed to`
-
-`! or if we combine with input 2, we can write an arbitrary location, as it's writing into the stack`
+>? printf
+>! this will allow us to leak the data from the stack
+>! and to write the random locations where the data from the stack is pointed to
+>! or if we combine with input 2, we can write an arbitrary location, as it's writing into the stack
 
 ### Thought flow
 ---
