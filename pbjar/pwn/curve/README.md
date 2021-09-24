@@ -111,7 +111,7 @@ undefined8 main(void)
 + main return address pointer can be calculated
 + shell code and pointer can be combined
 + still can modify the main return address with a painful printf bandwidth, as we can only write one pointer on the stack
-- unfortunately stack is not executable: FULL RELRO
+- unfortunately stack is not executable: NX enabled
 ```
 ! we can still redirect the execution where ever we want
 
