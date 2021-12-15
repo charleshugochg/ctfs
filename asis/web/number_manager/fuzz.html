@@ -1,0 +1,35 @@
+<script>
+  function hex (code, length) {
+    const prefix = '0'.repeat(length - 1)
+    return (prefix + code.toString(16)).slice(-length)
+  }
+  function utf8tochar (code) {
+    const utf8 = hex(code, 4)
+    return eval(`'\\u${utf8}'`)
+  }
+  function parsecookie (name) {
+    return (document.cookie
+      .split(';')
+      .find(part => part.trim().startsWith(name + '=')) || name + '=')
+      .slice(name.length + 2)
+      .trin()
+  }
+  function generate(start, end, cb, prefix='') {
+    for (let i=start; i < end; i++) {
+      cb(prefix + utf8tochar(i))
+    }
+  }
+  function fuzz() {
+    const prefix = 'W10='
+    generate(0x20, 0x7f, function(c) {
+      generate(0x20, 0x7f, function(c) {
+        try {
+          atob(prefix + c + Math.random())
+          console.log('Success', c.charCodeAt(0))
+        } catch {}
+      }, c)
+    })
+    console.log('done')
+  }
+  window.addEventListener('load', fuzz)
+</script>
